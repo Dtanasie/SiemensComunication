@@ -8,7 +8,8 @@ using System.Threading.Tasks;
 public class Worker : BackgroundService
 {
     private readonly ILogger<Worker> _logger;
-    private PLCConnection _plcConnection;
+    //  private PLCConnection _plcConnection;
+    private SimulatedPLCConnection _plcConnection; //foloseste simulatorul 
     private ImageMover _imageMover;
     private readonly string _plcAddress = "DB1.DBD0";
     private object _lastValue;
@@ -16,8 +17,9 @@ public class Worker : BackgroundService
     public Worker(ILogger<Worker> logger)
     {
         _logger = logger;
-        _plcConnection = new PLCConnection("192.168.0.1", CpuType.S71200, 0, 1);
-        _imageMover = new ImageMover(@"C:\sourceFolder", @"\\server\destinationFolder");
+        //   _plcConnection = new PLCConnection("192.168.0.1", CpuType.S71200, 0, 1);
+        _plcConnection = new SimulatedPLCConnection(); // Folosește simulatorul
+        _imageMover = new ImageMover(@"C:\Photos", @"C:\Destinatie");
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

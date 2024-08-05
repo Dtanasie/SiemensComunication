@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 IHost host = Host.CreateDefaultBuilder(args)
     .ConfigureServices(services =>
     {
-        services.AddHostedService<WorkerSimulatedPlcConnection>();
+        services.AddHostedService<Worker>();
     })
     .ConfigureLogging(logging =>
     {
