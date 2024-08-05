@@ -11,6 +11,7 @@ public class Worker : BackgroundService
     private PLCConnection _plcConnection;
     private ImageMover _imageMover;
     private readonly string _plcAddress = "DB1.DBD0";
+    private object _lastValue;
 
     public Worker(ILogger<Worker> logger)
     {
@@ -29,11 +30,18 @@ public class Worker : BackgroundService
             {
                 _logger.LogInformation("Connected to PLC.");
 
-                var value = _plcConnection.Read(_plcAddress);
+                var currentValue = _plcConnection.Read(_plcAddress);
 
-                if (value is int intValue && intValue == 1)
+                if (currentValue != null && !currentValue.Equals(_lastValue))
                 {
-                    _imageMover.MoveImages();
+                    _logger.LogInformation($"Value changed: {currentValue}");
+
+                    if (currentValue is int intValue && intValue == 1)
+                    {
+                        _imageMover.MoveImages();
+                    }
+
+                    _lastValue = currentValue;
                 }
             }
             else
@@ -41,7 +49,7 @@ public class Worker : BackgroundService
                 _logger.LogError("Failed to connect to PLC.");
             }
 
-            await Task.Delay(1000, stoppingToken); // Citire la fiecare 1 secundă
+            await Task.Delay(1000, stoppingToken); // Verificare la fiecare 1 secundă
         }
 
         _plcConnection.Close();
