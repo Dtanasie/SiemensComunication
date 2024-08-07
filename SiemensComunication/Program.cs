@@ -1,17 +1,51 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
+using Serilog;
+using SiemensComunication;
 
-IHost host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services =>
+class Program
+{
+    static async Task Main(string[] args)
     {
-        services.AddHostedService<Worker>();
-    })
-    .ConfigureLogging(logging =>
-    {
-        logging.ClearProviders();
-        logging.AddConsole();
-    })
-    .Build();
+        // Configure Serilog
+        var configuration = new ConfigurationBuilder()
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
 
-await host.RunAsync();
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(configuration)
+            .CreateLogger();
+
+        GlobalLogger.InitializeLogger(); // Setează loggerul global
+
+        try
+        {
+            Log.Information("Starting application...");
+            var host = Host.CreateDefaultBuilder(args)
+                .ConfigureAppConfiguration((context, config) =>
+                {
+                    config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                })
+                .ConfigureServices((context, services) =>
+                {
+                    services.AddSingleton<Worker>();
+                    services.Configure<PLCSettings>(context.Configuration.GetSection("PLC"));
+                    services.Configure<FolderSettings>(context.Configuration.GetSection("Folders"));
+                })
+                .UseSerilog() // Use Serilog for logging
+                .Build();
+
+            var worker = host.Services.GetRequiredService<Worker>();
+            await worker.RunAsync();
+        }
+        catch (Exception ex)
+        {
+            Log.Fatal(ex, "Application start-up failed");
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+}

@@ -1,33 +1,30 @@
-﻿using System;
-using System.IO;
-
-public class ImageMover
+﻿public class ImageMover
 {
-    private readonly string sourceFolder;
-    private readonly string destinationFolder;
+    private readonly string _sourceFolder;
+    private readonly string _destinationFolder;
 
     public ImageMover(string sourceFolder, string destinationFolder)
     {
-        this.sourceFolder = sourceFolder;
-        this.destinationFolder = destinationFolder;
+        _sourceFolder = sourceFolder;
+        _destinationFolder = destinationFolder;
     }
 
-    public void MoveImages()
+    public async Task MoveImagesAsync()
     {
         try
         {
-            var imageFiles = Directory.GetFiles(sourceFolder, "*.jpg"); // Presupunem că imaginile sunt .jpg
+            var imageFiles = Directory.GetFiles(_sourceFolder, "*.jpg"); // Presupunem că imaginile sunt .jpg
 
             if (imageFiles.Length == 0)
             {
                 // Nu sunt fișiere de mutat, nu se creează niciun folder
-                Console.WriteLine("No images to move.");
+                GlobalLogger.Logger.Information("No images to move.");
                 return;
             }
 
             // Crearea unui folder temporar pe serverul destinație cu data și ora curentă
             var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            var tempFolder = Path.Combine(destinationFolder, $"Temp_{timestamp}");
+            var tempFolder = Path.Combine(_destinationFolder, $"Temp_{timestamp}");
 
             if (!Directory.Exists(tempFolder))
             {
@@ -38,13 +35,13 @@ public class ImageMover
             {
                 var fileName = Path.GetFileName(file);
                 var destFile = Path.Combine(tempFolder, fileName);
-                File.Move(file, destFile);
-                Console.WriteLine($"Moved {fileName} to {tempFolder}");
+                await Task.Run(() => File.Move(file, destFile));
+                GlobalLogger.Logger.Information($"Moved {fileName} to {tempFolder}");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error moving images: {ex.Message}");
+            GlobalLogger.Logger.Error($"Error moving images: {ex.Message}");
         }
     }
 }
